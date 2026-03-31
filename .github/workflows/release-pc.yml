@@ -131,6 +131,26 @@ jobs:
         run: pnpm run ${{ matrix.config.electron_args }}
         working-directory: ${{ github.workspace }}/siyuan-note/siyuan/app
 
+      - name: Normalize Electron Artifact Name
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version }}"
+          if (-not $version.StartsWith("v")) {
+            $version = "v$version"
+          }
+
+          $buildDir = Join-Path "${{ github.workspace }}" "siyuan-note/siyuan/app/build"
+          $artifact = Get-ChildItem -Path $buildDir -Filter "siyuan-*-${{ matrix.config.suffix }}" | Select-Object -First 1
+
+          if (-not $artifact) {
+            throw "Electron artifact not found in $buildDir"
+          }
+
+          $targetName = "siyuan-$version-${{ matrix.config.suffix }}"
+          if ($artifact.Name -ne $targetName) {
+            Rename-Item -LiteralPath $artifact.FullName -NewName $targetName
+          }
+
       - uses: joutvhu/get-release@v1
         id: get_current_release
         with:
